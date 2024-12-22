@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
 	"sync/atomic"
 )
 
@@ -19,8 +19,9 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 
 func (cfg *apiConfig) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	hits := cfg.fileserverHits.Load()
-  res := "Hits: " + strconv.Itoa(int(hits))
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	const htmlres = "<html> <body> <h1>Welcome, Chirpy Admin</h1> <p>Chirpy has been visited %d times!</p> </body> </html>"
+	res := fmt.Sprintf(htmlres, hits)
+	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(res))
 }
@@ -29,4 +30,3 @@ func (cfg *apiConfig) handleReset(w http.ResponseWriter, r *http.Request) {
 	cfg.fileserverHits.Store(0)
 	w.WriteHeader(http.StatusOK)
 }
-
