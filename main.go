@@ -1,12 +1,30 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/mohits-git/experiments/go-server/internal/database"
 )
 
 func main() {
+  godotenv.Load()
+  dbUrl := os.Getenv("DB_URL")
+
+  db, err := sql.Open("postgres", dbUrl)
+  if err != nil {
+    log.Fatal(err)
+  }
+  defer db.Close()
+
+  dbQueries := database.New(db)
+  _ = dbQueries
+
 	port := "8080"
 	filepathRoot := "."
 
