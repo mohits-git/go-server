@@ -68,21 +68,55 @@ func cleanBody(body string) string {
 }
 
 func (cfg *apiConfig) handleGetChirps(w http.ResponseWriter, r *http.Request) {
-  chirps, err := cfg.db.GetChirps(r.Context())
-  if err != nil {
-    respondWithError(w, http.StatusInternalServerError, "Failed to get chirps")
-    return
-  }
+	chirps, err := cfg.db.GetChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to get chirps")
+		return
+	}
 
-  var res []Chirp
-  for _, chirp := range chirps {
-    res = append(res, Chirp{
-      ID:        chirp.ID,
-      CreatedAt: chirp.CreatedAt,
-      UpdatedAt: chirp.UpdatedAt,
-      Body:      chirp.Body,
-      UserID:    chirp.UserID,
-    })
-  }
-  respondWithJson(w, http.StatusOK, res)
+	var res []Chirp
+	for _, chirp := range chirps {
+		res = append(res, Chirp{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		})
+	}
+	respondWithJson(w, http.StatusOK, res)
+}
+
+func (cfg *apiConfig) handleGetChirp(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		respondWithError(w, http.StatusBadRequest, "Chirp ID is required")
+		return
+	}
+
+	chirpId, err := uuid.Parse(id)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Chirp ID")
+		return
+	}
+
+	chirp, err := cfg.db.GetChirpById(r.Context(), chirpId)
+	if err != nil {
+    if err.Error() == "sql: no rows in result set" {
+			respondWithError(w, http.StatusNotFound, "Chirp not found")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	res := Chirp{
+		ID:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
+	}
+
+	respondWithJson(w, http.StatusOK, res)
 }
