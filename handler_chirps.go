@@ -66,3 +66,23 @@ func cleanBody(body string) string {
 
 	return strings.Join(words, " ")
 }
+
+func (cfg *apiConfig) handleGetChirps(w http.ResponseWriter, r *http.Request) {
+  chirps, err := cfg.db.GetChirps(r.Context())
+  if err != nil {
+    respondWithError(w, http.StatusInternalServerError, "Failed to get chirps")
+    return
+  }
+
+  var res []Chirp
+  for _, chirp := range chirps {
+    res = append(res, Chirp{
+      ID:        chirp.ID,
+      CreatedAt: chirp.CreatedAt,
+      UpdatedAt: chirp.UpdatedAt,
+      Body:      chirp.Body,
+      UserID:    chirp.UserID,
+    })
+  }
+  respondWithJson(w, http.StatusOK, res)
+}
