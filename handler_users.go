@@ -3,11 +3,15 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/mohits-git/experiments/go-server/internal/auth"
+	"github.com/mohits-git/experiments/go-server/internal/database"
 )
 
 func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	type requestBody struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	var reqBody requestBody
 
@@ -17,12 +21,21 @@ func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reqBody.Email == "" {
-		respondWithError(w, http.StatusBadRequest, "Email is required")
+	if reqBody.Email == "" || reqBody.Password == "" {
+		respondWithError(w, http.StatusBadRequest, "Email and Password are required")
 		return
 	}
 
-	user, err := cfg.db.CreateUser(r.Context(), reqBody.Email)
+  hashedPassword, err := auth.HashPassword(reqBody.Password)
+  if err != nil {
+    respondWithError(w, http.StatusInternalServerError, err.Error())
+    return
+  }
+
+	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
+    Email:   reqBody.Email,
+    Password: hashedPassword,
+  })
 	if err != nil {
 		if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
 			respondWithError(w, http.StatusConflict, "Email already exists")
