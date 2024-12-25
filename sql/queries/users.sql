@@ -20,3 +20,13 @@ UPDATE users
 SET email = $2, password = $3
 WHERE id = $1
 RETURNING id, created_at, updated_at, email;
+
+-- name: UpgradeUser :exec
+UPDATE users
+SET is_chirpy_red = true
+WHERE id = $1;
+
+-- name: DowngradeUser :exec
+UPDATE users
+SET is_chirpy_red = false
+WHERE id = $1;

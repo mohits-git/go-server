@@ -57,8 +57,19 @@ func (q *Queries) DeleteUsers(ctx context.Context) error {
 	return err
 }
 
+const downgradeUser = `-- name: DowngradeUser :exec
+UPDATE users
+SET is_chirpy_red = false
+WHERE id = $1
+`
+
+func (q *Queries) DowngradeUser(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, downgradeUser, id)
+	return err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, created_at, updated_at, email, password FROM users WHERE email = $1
+SELECT id, created_at, updated_at, email, password, is_chirpy_red FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -70,6 +81,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 		&i.Email,
 		&i.Password,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
@@ -104,4 +116,15 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		&i.Email,
 	)
 	return i, err
+}
+
+const upgradeUser = `-- name: UpgradeUser :exec
+UPDATE users
+SET is_chirpy_red = true
+WHERE id = $1
+`
+
+func (q *Queries) UpgradeUser(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, upgradeUser, id)
+	return err
 }
