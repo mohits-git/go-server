@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/mohits-git/experiments/go-server/internal/auth"
 	"github.com/mohits-git/experiments/go-server/internal/database"
@@ -57,8 +58,9 @@ func (cfg *apiConfig) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	type requestBody struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		ExpiresIn int    `json:"expiresIn"`
 	}
 	var reqBody requestBody
 
@@ -85,11 +87,23 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+  expiresIn := time.Second * time.Duration(reqBody.ExpiresIn)
+  if reqBody.ExpiresIn == 0 {
+    expiresIn = time.Hour
+  }
+
+  token, err := auth.MakeJwt(user.ID, cfg.jwtSecret, expiresIn)
+  if err != nil {
+    respondWithError(w, http.StatusInternalServerError, err.Error())
+    return
+  }
+
 	res := User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+    Token:     token,
 	}
 
 	respondWithJson(w, http.StatusOK, res)
