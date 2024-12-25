@@ -82,22 +82,30 @@ func cleanBody(body string) string {
 }
 
 func (cfg *apiConfig) handleGetChirps(w http.ResponseWriter, r *http.Request) {
+	sort := r.URL.Query().Get("sort")
+	if sort == "" {
+		sort = "asc"
+	}
+
 	authorId := r.URL.Query().Get("author_id")
 	var chirps []database.Chirp
 	var err error
 
 	if authorId == "" {
-		chirps, err = cfg.db.GetChirps(r.Context())
+		chirps, err = cfg.db.GetChirps(r.Context(), sort)
 	} else {
 		userId, err := uuid.Parse(authorId)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Invalid User ID")
 		}
-		chirps, err = cfg.db.GetChirpsByUserId(r.Context(), userId)
+		chirps, err = cfg.db.GetChirpsByUserId(r.Context(), database.GetChirpsByUserIdParams{
+			UserID:  userId,
+			Column2: sort,
+		})
 	}
 
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to get chirps")
+		respondWithError(w, http.StatusInternalServerError, "Failed to get chirps. " + err.Error())
 		return
 	}
 
