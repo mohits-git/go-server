@@ -19,6 +19,7 @@ func main() {
 	platform := os.Getenv("PLATFORM")
 	port := os.Getenv("PORT")
 	filepathRoot := "."
+	jwtSecret := os.Getenv("JWT_SECRET")
 
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
@@ -31,6 +32,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries,
 		platform:       platform,
+		jwtSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()

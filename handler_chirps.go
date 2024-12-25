@@ -6,13 +6,27 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/mohits-git/experiments/go-server/internal/auth"
 	"github.com/mohits-git/experiments/go-server/internal/database"
 )
 
 func (cfg *apiConfig) handleCreateChirp(w http.ResponseWriter, r *http.Request) {
+  headers := r.Header
+
+  token, err := auth.GetBearerToken(headers)
+  if err != nil {
+    respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+    return
+  }
+
+  userId, err := auth.ValidateJWT(token, cfg.jwtSecret)
+  if err != nil {
+    respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+    return
+  }
+
 	type requestBody struct {
 		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
 	}
 	var body requestBody
 
@@ -22,7 +36,7 @@ func (cfg *apiConfig) handleCreateChirp(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if body.Body == "" || body.UserId == uuid.Nil {
+	if body.Body == "" || userId == uuid.Nil {
 		respondWithError(w, http.StatusBadRequest, "Body and User ID are required")
 		return
 	}
@@ -34,7 +48,7 @@ func (cfg *apiConfig) handleCreateChirp(w http.ResponseWriter, r *http.Request) 
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleanedBody,
-		UserID: body.UserId,
+		UserID: userId,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create chirp")
