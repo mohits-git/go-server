@@ -66,6 +66,7 @@ func (cfg *apiConfig) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    user.UpdatedAt,
 		Email:        user.Email,
+		IsChirpyRed:  user.IsChirpyRed,
 		Token:        token,
 		RefreshToken: refreshToken.Token,
 	}
@@ -80,11 +81,11 @@ func (cfg *apiConfig) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  user, err := cfg.db.GetUserFromRefreshToken(r.Context(), token)
-  if err != nil {
-    respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-    return
-  }
+	user, err := cfg.db.GetUserFromRefreshToken(r.Context(), token)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
 
 	newToken, err := auth.MakeJwt(user.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
@@ -102,17 +103,17 @@ func (cfg *apiConfig) handleRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handleRevoke(w http.ResponseWriter, r *http.Request) {
-  token, err := auth.GetBearerToken(r.Header)
-  if err != nil {
-    respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-    return
-  }
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
 
-  err = cfg.db.RevokeRefreshToken(r.Context(), token)
-  if err != nil {
-    respondWithError(w, http.StatusInternalServerError, "Unable to revoke token")
-    return
-  }
+	err = cfg.db.RevokeRefreshToken(r.Context(), token)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Unable to revoke token")
+		return
+	}
 
-  w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
