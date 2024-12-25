@@ -20,6 +20,7 @@ func main() {
 	port := os.Getenv("PORT")
 	filepathRoot := "."
 	jwtSecret := os.Getenv("JWT_SECRET")
+  polkaKey := os.Getenv("POLKA_KEY")
 
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
@@ -33,6 +34,7 @@ func main() {
 		db:             dbQueries,
 		platform:       platform,
 		jwtSecret:      jwtSecret,
+    polkaKey:       polkaKey,
 	}
 
 	mux := http.NewServeMux()

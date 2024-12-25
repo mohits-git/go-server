@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/mohits-git/experiments/go-server/internal/auth"
 )
 
 type polkaWebhookRequest struct {
@@ -15,6 +16,16 @@ type polkaWebhookRequest struct {
 }
 
 func (cfg *apiConfig) handlePolkaWebhooks(w http.ResponseWriter, r *http.Request) {
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if apiKey != cfg.polkaKey {
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+
 	var req polkaWebhookRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
