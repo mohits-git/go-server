@@ -20,7 +20,7 @@ func main() {
 	port := os.Getenv("PORT")
 	filepathRoot := "."
 	jwtSecret := os.Getenv("JWT_SECRET")
-  polkaKey := os.Getenv("POLKA_KEY")
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
@@ -34,24 +34,32 @@ func main() {
 		db:             dbQueries,
 		platform:       platform,
 		jwtSecret:      jwtSecret,
-    polkaKey:       polkaKey,
+		polkaKey:       polkaKey,
 	}
 
 	mux := http.NewServeMux()
+	// serve files from /app
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
+	// server health check
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	// admin endpoints
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handleMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handleReset)
+	// api endpoints
+	/// user
 	mux.HandleFunc("POST /api/users", apiCfg.handleCreateUser)
 	mux.HandleFunc("PUT /api/users", apiCfg.handleUpdateUser)
+	/// auth
 	mux.HandleFunc("POST /api/login", apiCfg.handleLoginUser)
 	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefresh)
 	mux.HandleFunc("POST /api/revoke", apiCfg.handleRevoke)
+	/// chirps
 	mux.HandleFunc("POST /api/chirps", apiCfg.handleCreateChirp)
 	mux.HandleFunc("GET /api/chirps", apiCfg.handleGetChirps)
 	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.handleGetChirp)
 	mux.HandleFunc("DELETE /api/chirps/{id}", apiCfg.handleDeleteChirp)
-  mux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlePolkaWebhooks)
+	/// polka webhooks (for user membership upgrades)
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlePolkaWebhooks)
 
 	server := &http.Server{
 		Addr:    ":" + port,
